@@ -41,24 +41,20 @@ def main():
             page.wait_for_load_state('networkidle')
             
             print("2. Klikanie przycisku LOGIN na stronie głównej...")
-            # Używamy dokładnej klasy z Twojego kodu HTML
             page.locator('.button-login').first.click()
             
             print("3. Logowanie na stronie Kabam...")
             page.wait_for_timeout(3000) 
             
-            # Wpisujemy email
             email_field = page.locator('input[name="email"], input[type="email"]').first
             email_field.wait_for(state="visible", timeout=15000)
             email_field.fill(LOGIN_EMAIL)
             
-            # Wpisujemy hasło (korzystając z name="password")
             password_field = page.locator('input[name="password"]').first
             password_field.wait_for(state="visible", timeout=15000)
             password_field.fill(PASSWORD)
             
             print("Klikam przycisk zatwierdzający (Submit)...")
-            # Używamy dokładnego ID przycisku z Twojego kodu HTML
             page.locator('#submit-button').click()
             
             print("4. Czekamy na powrót do sklepu...")
@@ -66,27 +62,41 @@ def main():
             page.wait_for_load_state('networkidle')
             
             print("5. Przewijanie strony i szukanie darmowych nagród...")
+            # Najpierw czekamy, aż gra załaduje z serwera kontener z kartami (.item-card)
+            page.wait_for_selector('.item-card', timeout=15000)
+            
+            # Przewijamy stronę do dołu i dajemy jej 3 sekundy na załadowanie grafik
             page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             page.wait_for_timeout(3000) 
             
-            free_buttons = page.get_by_text("Free", exact=False).all()
+            # SZUKANIE PRZYCISKÓW: Używamy dokładnych klas z Twojego HTML
+            # Znajdzie tylko te darmowe rzeczy, które mają aktywny przycisk (nie są SOLD OUT)
+            free_buttons = page.locator('.item-action-free .primary-button').all()
             
             if not free_buttons:
-                print("Nie znaleziono przycisków 'Free'.")
-                send_telegram_message("⚠️ Skrypt zakończony, ale nie znaleziono żadnych darmowych nagród (przycisków 'Free').")
+                print("Nie znaleziono aktywnych przycisków 'FREE'.")
+                send_telegram_message("⚠️ Skrypt zakończony. Sklep załadowany, ale nie było żadnych darmowych nagród do odebrania (wszystko to SOLD OUT).")
             else:
                 claims_count = 0
                 for btn in free_buttons:
                     try:
                         if btn.is_visible():
-                            btn.click()
-                            print("Kliknięto 'Free'!")
+                            # Zabezpieczenie: scrollujemy element do widoku przed kliknięciem
+                            btn.scroll_into_view_if_needed()
+                            page.wait_for_timeout(500)
+                            
+                            # Klikamy przycisk z wymuszeniem, jeśli coś by go zasłaniało
+                            btn.click(force=True)
+                            print("Kliknięto prawdziwy przycisk 'Free'!")
                             claims_count += 1
-                            page.wait_for_timeout(2000)
+                            
+                            # Czekamy 4 sekundy, żeby serwer gry przetworzył odbiór nagrody 
+                            # zanim klikniemy kolejną
+                            page.wait_for_timeout(4000)
                     except Exception as btn_err:
                         print(f"Pominięto przycisk z powodu błędu: {btn_err}")
                 
-                send_telegram_message(f"✅ <b>Sukces!</b> Dzisiejsza akcja MCOC wykonana. Kliknięto {claims_count} darmowych nagród.")
+                send_telegram_message(f"✅ <b>Sukces!</b> Dzisiejsza akcja MCOC wykonana. Odebrano {claims_count} darmowych nagród!")
 
             browser.close()
 
