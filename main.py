@@ -62,15 +62,12 @@ def main():
             page.wait_for_load_state('networkidle')
             
             print("5. Przewijanie strony i szukanie darmowych nagród...")
-            # Najpierw czekamy, aż gra załaduje z serwera kontener z kartami (.item-card)
             page.wait_for_selector('.item-card', timeout=15000)
             
-            # Przewijamy stronę do dołu i dajemy jej 3 sekundy na załadowanie grafik
+            # scroll donw
             page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             page.wait_for_timeout(3000) 
             
-            # SZUKANIE PRZYCISKÓW: Używamy dokładnych klas z Twojego HTML
-            # Znajdzie tylko te darmowe rzeczy, które mają aktywny przycisk (nie są SOLD OUT)
             free_buttons = page.locator('.item-action-free .primary-button').all()
             
             if not free_buttons:
@@ -81,17 +78,13 @@ def main():
                 for btn in free_buttons:
                     try:
                         if btn.is_visible():
-                            # Zabezpieczenie: scrollujemy element do widoku przed kliknięciem
                             btn.scroll_into_view_if_needed()
                             page.wait_for_timeout(500)
                             
-                            # Klikamy przycisk z wymuszeniem, jeśli coś by go zasłaniało
                             btn.click(force=True)
                             print("Kliknięto prawdziwy przycisk 'Free'!")
                             claims_count += 1
                             
-                            # Czekamy 4 sekundy, żeby serwer gry przetworzył odbiór nagrody 
-                            # zanim klikniemy kolejną
                             page.wait_for_timeout(4000)
                     except Exception as btn_err:
                         print(f"Pominięto przycisk z powodu błędu: {btn_err}")

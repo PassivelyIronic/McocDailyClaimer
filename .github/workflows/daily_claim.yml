@@ -2,8 +2,7 @@ name: Daily Claim Automation
 
 on:
   schedule:
-    # 18:05 czasu UTC to 20:05 czasu polskiego (latem)
-    # Zostawiamy 5 minut marginesu po 20:00, żeby serwery gry zdążyły odświeżyć ofertę
+    # 18:05 UTC to 20:05 poland (summer time) i 19:05 poland (winter time)
     - cron: '5 18 * * *'
   workflow_dispatch:
 
@@ -29,7 +28,7 @@ jobs:
 
     - name: Uruchomienie skryptu
       env:
-        # Tutaj GitHub wstrzykuje Twoje tajne hasła w bezpieczny sposób
+        # secrets injection
         TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         CHAT_ID: ${{ secrets.CHAT_ID }}
         LOGIN_EMAIL: ${{ secrets.LOGIN_EMAIL }}
