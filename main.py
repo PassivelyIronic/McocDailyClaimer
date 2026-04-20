@@ -61,34 +61,49 @@ def main():
             page.wait_for_url("https://store.playcontestofchampions.com/**", timeout=30000)
             page.wait_for_load_state('networkidle')
             
-            print("5. Przewijanie strony i szukanie darmowych nagród...")
+            print("5. Szukanie darmowych nagród (pętla z odświeżaniem)...")
             page.wait_for_selector('.item-card', timeout=15000)
             
-            # scroll donw
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            page.wait_for_timeout(3000) 
+            claims_count = 0
+            max_attempts = 10
             
-            free_buttons = page.locator('.item-action-free .primary-button').all()
+            for i in range(max_attempts):
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                page.wait_for_timeout(3000) 
+                
+                free_buttons = page.locator('.item-action-free .primary-button')
+                current_count = free_buttons.count()
+                
+                if current_count == 0:
+                    break
+                
+                print(f"Znaleziono {current_count} darmowych nagród. Odbieram pierwszą z brzegu...")
+                try:
+                    btn = free_buttons.first
+                    btn.scroll_into_view_if_needed()
+                    page.wait_for_timeout(500)
+                    
+                    btn.click(force=True)
+                    claims_count += 1
+                    
+                    page.wait_for_timeout(4000)
+                    
+                    page.keyboard.press("Escape")
+                    page.wait_for_timeout(1000)
+                    
+                    print("Odświeżam stronę dla pewności...")
+                    page.reload()
+                    page.wait_for_load_state('networkidle')
+                    page.wait_for_selector('.item-card', timeout=15000)
+                    
+                except Exception as btn_err:
+                    print(f"Błąd przy klikaniu konkretnego przycisku: {btn_err}")
+                    break
             
-            if not free_buttons:
+            if claims_count == 0:
                 print("Nie znaleziono aktywnych przycisków 'FREE'.")
                 send_telegram_message("⚠️ Skrypt zakończony. Sklep załadowany, ale nie było żadnych darmowych nagród do odebrania (wszystko to SOLD OUT).")
             else:
-                claims_count = 0
-                for btn in free_buttons:
-                    try:
-                        if btn.is_visible():
-                            btn.scroll_into_view_if_needed()
-                            page.wait_for_timeout(500)
-                            
-                            btn.click(force=True)
-                            print("Kliknięto prawdziwy przycisk 'Free'!")
-                            claims_count += 1
-                            
-                            page.wait_for_timeout(4000)
-                    except Exception as btn_err:
-                        print(f"Pominięto przycisk z powodu błędu: {btn_err}")
-                
                 send_telegram_message(f"✅ <b>Sukces!</b> Dzisiejsza akcja MCOC wykonana. Odebrano {claims_count} darmowych nagród!")
 
             browser.close()
