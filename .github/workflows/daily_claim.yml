@@ -2,9 +2,10 @@ name: Daily Claim Automation
 
 on:
   schedule:
-    # Uruchamia się codziennie o 9:00 rano czasu UTC (czyli 10:00/11:00 w Polsce)
-    - cron: '0 9 * * *'
-  workflow_dispatch: # Ta linijka dodaje magiczny przycisk "Run workflow" na GitHubie do ręcznego testowania
+    # 18:05 czasu UTC to 20:05 czasu polskiego (latem)
+    # Zostawiamy 5 minut marginesu po 20:00, żeby serwery gry zdążyły odświeżyć ofertę
+    - cron: '5 18 * * *'
+  workflow_dispatch:
 
 jobs:
   run-automation:
